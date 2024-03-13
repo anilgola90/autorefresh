@@ -12,11 +12,19 @@ public class DemographicService {
     DBService    dbService = DBService.getDBservice();
     public  Void fetchDemographic(List<String> list) throws InterruptedException {
         List<StructuredTaskScope.Subtask<Demographic>> resultList = new ArrayList<>();
+        // 1. will open Structured task Scope with try with resources as it is auto closeable
+        // 2. submit the callables
+        // 3. call join and will wait for all virtual threads to finish, this is blocking. Why
+        //  blocking? Why not? Virtual threads are cheap and we can do it.
         try(StructuredTaskScope<Demographic> scope = new StructuredTaskScope<>()){
             for(String emirateId : list){
-                resultList.add(scope.fork(() -> getDemographic(emirateId)));
+                resultList.add(scope.fork(() -> getDemographic(emirateId))); // tasks will be executed in a
+                                                                             // new virtual threads. 1000 tasks means 100 virtual threads
             }
-            scope.join();
+
+            scope.join(); // wait here for results (something close to count down latch)
+
+            // now we can analyze our results and do something about it
             for(StructuredTaskScope.Subtask<Demographic> task : resultList){
                 if(task.state() == StructuredTaskScope.Subtask.State.SUCCESS){
                     dbService.demographicSuccessList.add(new DBService.Success(task.get().emiratesId));
@@ -26,7 +34,7 @@ public class DemographicService {
                 }
             }
         }
-        return null;
+        return null; // Callable which expects nothing to return
     }
 
 
