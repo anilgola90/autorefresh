@@ -19,7 +19,7 @@ public class DemographicService {
         try(StructuredTaskScope<Demographic> scope = new StructuredTaskScope<>()){
             for(String emirateId : list){
                 resultList.add(scope.fork(() -> getDemographic(emirateId))); // tasks will be executed in a
-                                                                             // new virtual threads. 1000 tasks means 100 virtual threads
+                                                                             // new virtual threads. 1000 tasks means 1000 virtual threads
             }
 
             scope.join(); // wait here for results (something close to count down latch)
